@@ -1,6 +1,6 @@
 {
   "name": "courier-cache",
-  "version": "0.1.4",
+  "version": "0.1.0",
   "author": "市民李生生",
   "private": false,
   "description": "一个高效便捷的前端Fetch缓存插件",
@@ -11,8 +11,8 @@
     "url": "https://github.com/a707843858/courierCach"
   },
   "files": [
-    "lib",
     "src",
+    "public",
     "config"
   ],
   "keywords": [
@@ -22,14 +22,25 @@
   "homepage": "https://github.com/a707843858/courierCach",
   "bugs": "https://github.com/a707843858/courierCach",
   "dependencies": {
-    "typescript": "^4.2.3"
+    "@testing-library/jest-dom": "^5.11.10",
+    "@testing-library/react": "^11.2.6",
+    "@testing-library/user-event": "^12.8.3",
+    "@types/jest": "^26.0.22",
+    "@types/node": "^12.20.7",
+    "@types/react": "^17.0.3",
+    "@types/react-dom": "^17.0.3",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-scripts": "4.0.3",
+    "typescript": "^4.2.3",
+    "web-vitals": "^1.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "build-lib": "webpack"
+    "build-p": "webpack"
   },
   "eslintConfig": {
     "extends": [

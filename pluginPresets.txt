@@ -1,7 +1,0 @@
-sass-loader
-node-asss
-axios
-element-ui
-crypto-js //加密
-terser-webpack-plugin //打包后加密
-clean-webpack-plugin //打包前清理dist文件夹
