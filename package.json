@@ -10,6 +10,9 @@
     "type": "git",
     "url": "https://github.com/a707843858/courierCach"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "files": [
     "lib",
     "src",
