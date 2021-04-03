@@ -50,7 +50,7 @@ class Courier {
 			expires = config.expires || defaults.expires || 0,
 			controller = new AbortController(),
 			signal = controller.signal,
-			timestamp:number = new Date().getTime();
+			timestamp: number = new Date().getTime();
 		let cacheKey = '',
 			sendReqest = true;
 		config.method = config.method ? config.method.toUpperCase() : 'GET';
@@ -188,11 +188,11 @@ class Courier {
 		return this.fetch(url, configProps);
 	}
 
-	interceptRequest(resolve: void, reject: void) {
+	interceptRequest(resolve?: Function, reject?: Function) {
 		requestInterceptorChain = [resolve, reject];
 	}
 
-	interceptResponse(resolve: void, reject: void) {
+	interceptResponse(resolve?: Function, reject?: Function) {
 		responseInterceptorChain = [resolve, reject];
 	}
 }
@@ -227,8 +227,10 @@ function defineCacheKey(x: { url: string; config: any; expires: number; controll
 function interceptRequestAction(config: fetchProps) {
 	let errorResponse: any = '';
 	const _config: fetchProps = requestInterceptorChain[0] ? requestInterceptorChain[0](config) : config;
+	let errMsg = "";
 	if (!_config) {
-		errorResponse = requestInterceptorChain[1] ? requestInterceptorChain[1] : 'Miss return config !';
+		errMsg = 'Missing return value !';
+		errorResponse = requestInterceptorChain[1] ? requestInterceptorChain[1](errMsg) || 'No custom error message was returned !' : errMsg;
 	}
 	return { errorResponse, config: _config };
 }

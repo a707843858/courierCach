@@ -43,8 +43,8 @@ declare namespace courierCache {
 		delete(url: string, config: fetchOtherProps): Promise<unknown>;
 		heade(url: string, config: fetchOtherProps): Promise<unknown>;
 		options(url: string, config: fetchOtherProps): Promise<unknown>;
-		interceptRequest(resolve: void, reject: void): void;
-		interceptResponse(resolve: void, reject: void): void;
+		interceptRequest(resolve?: Function, reject?: Function): void;
+		interceptResponse(Function?: void, reject?: Function): void;
 	}
 
 	//cache
