@@ -2,16 +2,17 @@ import React, { Component } from 'react';
 // import logo from './logo.svg';
 import './App.css';
 import Courier from './packages';
+
 const courier = new Courier();
 courier.interceptRequest((res) => {
-	console.log(res);
+	// console.log(res);
 	return res;
 }, (err => {
-	console.log(err);
+	// console.log(err);
 }));
 
 courier.interceptResponse((res) => {
-	console.log(res, 'hhhh');
+	// console.log(res, 'hhhh');
 	return "1"
 });
 

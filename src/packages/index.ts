@@ -2,13 +2,17 @@ import tasks from './task';
 import cache from './cache';
 import { tuple, formatQuery, checkType } from './utils';
 import mergeConfig from './mergeConfig';
+import fetch from 'node-fetch';
+// import 'core-js';
+// import "babel-polyfill";
 
 const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 const methodsTypes = tuple(methods.join(','));
 export type methodsType = typeof methodsTypes[number];
-// const env = window ? 'window' : this === 'node' ? 'node' : '';
+const env = window ? 'window' : this === 'node' ? 'node' : '';
 const f = function (url: string, config: any) {
-	return window.fetch(url, config);
+	console.log('a');
+	return window ? window.fetch(url, config) : fetch;
 };
 let requestInterceptorChain: any[] = [],
 	responseInterceptorChain: any[] = [];

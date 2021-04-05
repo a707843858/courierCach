@@ -1,6 +1,6 @@
 {
   "name": "courier-cache",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": "市民李生生",
   "private": false,
   "description": "一个高效便捷的前端Fetch缓存插件",
@@ -9,9 +9,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/a707843858/courierCach"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
   },
   "files": [
     "lib",
@@ -25,7 +22,11 @@
   "homepage": "https://github.com/a707843858/courierCach",
   "bugs": "https://github.com/a707843858/courierCach",
   "dependencies": {
-    "typescript": "^4.2.3"
+    "babel-polyfill": "^6.26.0",
+    "core-js": "^3.10.0",
+    "node-fetch": "^2.6.1",
+    "typescript": "^4.2.3",
+    "whatwg-fetch": "^3.6.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -53,9 +54,25 @@
     ]
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^5.11.10",
+    "@testing-library/react": "^11.2.6",
+    "@testing-library/user-event": "^12.8.3",
+    "@types/jest": "^26.0.22",
+    "@types/node": "^12.20.7",
+    "@types/node-fetch": "^2.5.9",
+    "@types/react": "^17.0.3",
+    "@types/react-dom": "^17.0.3",
+    "@types/whatwg-fetch": "^0.0.33",
     "clean-webpack-plugin": "^3.0.0",
+    "core-js": "^3.10.0",
+    "react": "^17.0.2",
+    "react-app-polyfill": "^2.0.0",
+    "react-dom": "^17.0.2",
+    "react-scripts": "4.0.3",
     "ts-loader": "^8.1.0",
     "tslint": "^6.1.3",
-    "tslint-loader": "^3.5.4"
+    "tslint-loader": "^3.5.4",
+    "typescript": "^4.2.3",
+    "web-vitals": "^1.1.1"
   }
 }
