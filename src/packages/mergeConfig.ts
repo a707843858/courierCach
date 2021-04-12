@@ -1,6 +1,6 @@
 import { isObject, isUndefined } from './utils';
 
-export interface DefautsConfig {
+export interface DefautsConfigType {
 	baseUrl: string;
 	expires: number;
 	timeout: number;
@@ -10,10 +10,17 @@ export interface DefautsConfig {
 	responseEncoding: string;
 	xsrfCookieName: string;
 	xsrfHeaderName: string;
+	mode: string;
+	redirect: string;
+	referrer: string;
+	integrity: string;
+	cache: string;
+	keepalive: boolean;
+	isHistoryNavigation:boolean;
 }
 
-export default function mergeConfig(configProps: { [k: string]: any }): DefautsConfig {
-	const config: DefautsConfig = {
+export default function mergeConfig(configProps: { [k: string]: any }): DefautsConfigType {
+	const config: DefautsConfigType = {
 		baseUrl: '',
 		expires: 0,
 		timeout: 0,
@@ -23,6 +30,13 @@ export default function mergeConfig(configProps: { [k: string]: any }): DefautsC
 		responseEncoding: 'utf8',
 		xsrfCookieName: '',
 		xsrfHeaderName: '',
+		mode: 'cors',
+		redirect: 'follow',
+		referrer: 'about:client',
+		integrity: '',
+		cache: 'default',
+		keepalive: false,
+		isHistoryNavigation:false,
 	};
 
 	/** baseConfig */

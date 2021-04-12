@@ -1,23 +1,22 @@
 import tasks from './task';
-import cache from './cache';
+import cacheControl from './mapCache';
 import { tuple, formatQuery, checkType } from './utils';
-import mergeConfig from './mergeConfig';
-import fetch from 'node-fetch';
+import mergeConfig, { DefautsConfigType } from './mergeConfig';
+import fetch, { Headers, Response } from 'node-fetch';
 // import 'core-js';
 // import "babel-polyfill";
 
 const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 const methodsTypes = tuple(methods.join(','));
 export type methodsType = typeof methodsTypes[number];
-const env = window ? 'window' : this === 'node' ? 'node' : '';
+// const env = window ? 'window' : this === 'node' ? 'node' : '';
 const f = function (url: string, config: any) {
-	console.log('a');
 	return window ? window.fetch(url, config) : fetch;
 };
 let requestInterceptorChain: any[] = [],
 	responseInterceptorChain: any[] = [];
 
-export interface fetchBaseProps {
+export interface fetchProps {
 	method?: string;
 	body?: any;
 	timeout?: number;
@@ -25,14 +24,15 @@ export interface fetchBaseProps {
 	headers?: { [k: string]: any };
 	signal?: any;
 	params?: any;
-}
-
-export interface fetchOtherProps extends fetchBaseProps {
+	cache?: string;
 	responseType?: string;
-}
-
-export interface fetchProps extends fetchBaseProps {
-	responseType: string;
+	credentials?: string;
+	mode?: string;
+	redirect?: string;
+	referrer?: string;
+	integrity?: string;
+	keepalive?: boolean;
+	isHistoryNavigation?: boolean;
 }
 
 export interface interceptRequestResponse {
@@ -40,16 +40,21 @@ export interface interceptRequestResponse {
 	config: fetchProps;
 }
 
-class Courier {
+class CourierCach {
+	readonly cacheType: string;
 	defaults;
 	task: any[] = tasks.tasksProxy;
-	// cache: { [k: string]: any } = cache.cacheProxy;
+	// cache: { [k: string]: any } = {};
 
 	constructor(config: { [k: string]: any } = {}) {
+		this.cacheType = cacheControl.type;
 		this.defaults = mergeConfig(config);
 	}
 
-	fetch(url: string, config: fetchProps) {
+	fetch(url: string, config: fetchProps = { method: 'GET' }): Promise<Response> {
+		/**
+		 * Init
+		 */
 		const defaults = this.defaults,
 			expires = config.expires || defaults.expires || 0,
 			controller = new AbortController(),
@@ -63,7 +68,7 @@ class Courier {
 		/**
 		 * Headers
 		 */
-		config = defineConfig(defaults, config);
+		config = mergeConfigAction(defaults, config);
 		/**
 		 * Body
 		 */
@@ -71,7 +76,7 @@ class Courier {
 			if (config.method === 'GET') {
 				const params = formatQuery(config.body);
 				url += params;
-				config.body = null;
+				config.body = undefined;
 			}
 		}
 		/**
@@ -82,23 +87,18 @@ class Courier {
 			const interceptRequestResponse = interceptRequestAction(config);
 			if (interceptRequestResponse.errorResponse) {
 				reject(interceptRequestResponse.errorResponse);
-				return false;
 			}
-
 			config = interceptRequestResponse.config;
 			/** Task | Cache */
-			cacheKey = defineCacheKey({ url, config, expires, controller });
-			const cacheItem = cacheKey ? await cache.get(cacheKey) : '';
-			sendReqest = cacheItem && timestamp < cacheItem.expirationTime ? false : true;
+			cacheKey = createCacheKey({ url, config, expires, controller });
+			sendReqest = await isSendRequest(this.cacheType, cacheKey, url, config, expires);
 			/** Fetch */
-			const fecthPromise = sendReqest ? f(url, config) : cache.get(cacheKey),
+			const fecthPromise = sendReqest ? f(url, config) : cacheControl.get(cacheKey, url, config),
 				abortPromise = new Promise((res, rej) => {
 					if (defaults.timeout) {
 						let timer = setTimeout(() => {
 							controller.abort();
-							rej({
-								status: 504,
-							});
+							rej('The request has timed out !');
 							clearTimeout(timer);
 						}, defaults.timeout);
 					}
@@ -106,18 +106,21 @@ class Courier {
 			Promise.race([fecthPromise, abortPromise])
 				.then(async (res: any) => {
 					/** updateCache */
-					if (res && expires > 0 && (!cacheItem || timestamp > cacheItem.expirationTime)) {
-						const data = (await convertResponse(res, config.responseType)) || '';
-						res.data = data ? (checkType(data, 'object') ? data.data : data) : '';
-						if (data) {
-							res.expires = expires;
-							res.expirationTime = timestamp + Math.abs(expires);
-							const saveCache = await cache.set(cacheKey, res);
+					if (res && expires > 0 && sendReqest) {
+						if (res.body) {
+							const newResponse = new Response(res.body || null, { headers: config.headers });
+							newResponse.headers.set('_expires', expires + '');
+							newResponse.headers.set('_expirationTime', timestamp + Math.abs(expires) + '');
+							// @ts-ignore
+							const saveCache = await cacheControl.set(cacheKey, newResponse);
 							if (!saveCache) {
-								console.error(`The request (${url}) result cache failed !`);
+								reject(`The request (${url}) result cache failed !`);
 							}
+							res = (await cacheControl.get(cacheKey, url, config)) || '';
 						}
 					}
+					const data = (await convertResponse(res, config && config.responseType ? config.responseType : 'json')) || '';
+					res.data = data ? (checkType(data, 'object') ? data.data : data) : '';
 					res = interceptResponseAction(res, 'resolve');
 					resolve(res);
 				})
@@ -136,7 +139,7 @@ class Courier {
 		});
 	}
 
-	post(url: string, config: fetchOtherProps) {
+	post(url: string, config: fetchProps = { method: 'POST', responseType: 'json' }): Promise<Response> {
 		const configProps: fetchProps = { method: 'POST', responseType: '' };
 		Object.keys(config).forEach((key) => {
 			configProps[key] = config[key];
@@ -144,7 +147,7 @@ class Courier {
 		return this.fetch(url, configProps);
 	}
 
-	get(url: string, config: fetchOtherProps) {
+	get(url: string, config: fetchProps = { method: 'GET', responseType: 'json' }): Promise<Response> {
 		const configProps: fetchProps = { method: 'GET', responseType: '' };
 		Object.keys(config).forEach((key) => {
 			configProps[key] = config[key];
@@ -152,7 +155,7 @@ class Courier {
 		return this.fetch(url, configProps);
 	}
 
-	put(url: string, config: fetchOtherProps) {
+	put(url: string, config: fetchProps = { method: 'PUT', responseType: 'json' }): Promise<Response> {
 		const configProps: fetchProps = { method: 'PUT', responseType: '' };
 		Object.keys(config).forEach((key) => {
 			configProps[key] = config[key];
@@ -160,7 +163,7 @@ class Courier {
 		return this.fetch(url, configProps);
 	}
 
-	patch(url: string, config: fetchOtherProps) {
+	patch(url: string, config: fetchProps = { method: 'PATCH', responseType: 'json' }): Promise<Response> {
 		const configProps: fetchProps = { method: 'PATCH', responseType: '' };
 		Object.keys(config).forEach((key) => {
 			configProps[key] = config[key];
@@ -168,7 +171,7 @@ class Courier {
 		return this.fetch(url, configProps);
 	}
 
-	delete(url: string, config: fetchOtherProps) {
+	delete(url: string, config: fetchProps = { method: 'DELETE', responseType: 'json' }): Promise<Response> {
 		const configProps: fetchProps = { method: 'DELETE', responseType: '' };
 		Object.keys(config).forEach((key) => {
 			configProps[key] = config[key];
@@ -176,7 +179,7 @@ class Courier {
 		return this.fetch(url, configProps);
 	}
 
-	heade(url: string, config: fetchOtherProps) {
+	heade(url: string, config: fetchProps = { method: 'HEAD', responseType: 'json' }): Promise<Response> {
 		const configProps: fetchProps = { method: 'HEAD', responseType: '' };
 		Object.keys(config).forEach((key) => {
 			configProps[key] = config[key];
@@ -184,7 +187,7 @@ class Courier {
 		return this.fetch(url, configProps);
 	}
 
-	options(url: string, config: fetchOtherProps) {
+	options(url: string, config: fetchProps = { method: 'OPTIONS', responseType: 'json' }): Promise<Response> {
 		const configProps: fetchProps = { method: 'OPTIONS', responseType: '' };
 		Object.keys(config).forEach((key) => {
 			configProps[key] = config[key];
@@ -201,45 +204,55 @@ class Courier {
 	}
 }
 
-function defineConfig(defaultConfig: any, config: any) {
+const mergeConfigAction = function (defaultConfig: DefautsConfigType, config: fetchProps) {
+	config = mergeHeaderAction(defaultConfig, config);
+	Object.keys(defaultConfig).forEach((key) => {
+		const mustHaveListList: string[] = ['method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'integrity', 'keepalive', 'isHistoryNavigation'];
+		if (key && mustHaveListList.indexOf(key) > -1 && config[key] === undefined) {
+			config[key] = defaultConfig[key];
+		}
+	});
+	return config;
+};
+
+const mergeHeaderAction = function (defaultConfig: DefautsConfigType, config: fetchProps) {
 	const method = config.method,
 		defaultHeaders = defaultConfig.headers,
 		headerTags = [method, 'COMMON'];
-	config.headers = config.headers && typeof config.headers === 'object' ? config.headers : {};
-	/** Headers */
+	const headers: { [k: string]: any } = config.headers && typeof config.headers === 'object' ? config.headers : {};
+	/** Merge Headers */
 	headerTags.forEach((tag) => {
-		if (defaultHeaders[tag]) {
+		if (tag && defaultHeaders[tag]) {
 			const header = defaultHeaders[tag];
 			Object.keys(header).forEach((key) => {
-				config.headers[key] = config.headers[key] === undefined ? header[key] : config.headers[key];
+				headers[key] = headers[key] === undefined ? header[key] : headers[key];
 			});
 		}
 	});
-	/** Credentials */
-	config.credentials = config.credentials || defaultConfig.credentials || '';
+	// headers['Expires'] = new Date().toJSON();
+	config.headers = new Headers(headers);
 	return config;
-}
+};
 
-function defineCacheKey(x: { url: string; config: any; expires: number; controller: any }): string {
+const createCacheKey = function (x: { url: string; config: any; expires: number; controller: any }): string {
 	const cacheKey = tasks.createKey(x.url, x.config);
 	tasks.deleteTask(cacheKey, true);
 	tasks.addTask(cacheKey, x.controller);
-	// cache.addCach(cachKey, x.expires, '');
 	return cacheKey;
-}
+};
 
-function interceptRequestAction(config: fetchProps) {
+const interceptRequestAction = function (config: fetchProps) {
 	let errorResponse: any = '';
 	const _config: fetchProps = requestInterceptorChain[0] ? requestInterceptorChain[0](config) : config;
-	let errMsg = "";
+	let errMsg = '';
 	if (!_config) {
 		errMsg = 'Missing return value !';
 		errorResponse = requestInterceptorChain[1] ? requestInterceptorChain[1](errMsg) || 'No custom error message was returned !' : errMsg;
 	}
 	return { errorResponse, config: _config };
-}
+};
 
-function interceptResponseAction(res: any, type: string) {
+const interceptResponseAction = function (res: any, type: string) {
 	let _res: any = '';
 	if (type === 'resolve') {
 		_res = responseInterceptorChain[0] ? responseInterceptorChain[0](res) : res;
@@ -247,9 +260,9 @@ function interceptResponseAction(res: any, type: string) {
 		_res = responseInterceptorChain[1] ? responseInterceptorChain[1](res) : res;
 	}
 	return _res;
-}
+};
 
-function convertResponse(value: any, type: string): any {
+const convertResponse = function (value: any, type: string): Promise<any> {
 	let res: any = '';
 	switch (type) {
 		case 'text':
@@ -268,6 +281,21 @@ function convertResponse(value: any, type: string): any {
 			res = value.json();
 	}
 	return res;
-}
+};
 
-export default Courier;
+const isSendRequest = async function (type: string, cacheKey: string, url: string, config: fetchProps, expires: number): Promise<boolean> {
+	let isSend = true;
+	const timestamp = new Date().getTime();
+	const cacheItem = (await cacheControl.get(cacheKey, url, config)) || '';
+	const headers = cacheItem && cacheItem.headers ? cacheItem.headers : '';
+	if (!config.headers || !headers || (config.cache && ['no-cache', 'reload'].indexOf(config.cache) > -1)) {
+		return true;
+	}
+	const expirationTime = headers.get('_expirationTime') || 0;
+	if (config.cache === 'force-cache' || (expirationTime && timestamp < parseInt(expirationTime))) {
+		isSend = false;
+	}
+	return isSend;
+};
+
+export default CourierCach;

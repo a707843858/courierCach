@@ -13,7 +13,7 @@ const tasksProxy = new Proxy(tasks, {
 });
 
 const createKey = function (url: string, config: any) {
-	let key = `url:${url},method:${config.method},data:`;
+	let key = `${url},${config.method},`;
 	key += config.body ? JSON.stringify(config.body) : '';
 	return key;
 };

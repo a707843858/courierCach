@@ -1,35 +1,26 @@
 {
-  "compilerOptions": {
-    "outDir": "./lib/",
-    "sourceMap": false,
-    "declaration": false,
-    "target": "es5",
-    "importHelpers": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "suppressImplicitAnyIndexErrors": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "noEmit": true
-  },
-  "include": [
-    "src/packages/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "*.test.ts"
-  ]
+	"compilerOptions": {
+		"outDir": "./lib/",
+		"sourceMap": false,
+		"declaration": false,
+		"target": "es5",
+		"importHelpers": true,
+		"lib": ["dom", "dom.iterable", "esnext"],
+		"suppressImplicitAnyIndexErrors": true,
+		"allowJs": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"module": "esnext",
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "react-jsx",
+		"noEmit": false
+	},
+	"include": ["src/packages/**/*.ts"],
+	"exclude": ["node_modules", "*.test.ts"]
 }
