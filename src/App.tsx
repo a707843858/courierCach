@@ -3,16 +3,16 @@ import React, { Component } from 'react';
 import './App.css';
 import Courier from './packages';
 
-const courier = new Courier();
-courier.interceptRequest(
-	(config) => {
-		// console.log(res);
-		return config;
-	},
-	(err) => {
-		// console.log(err);
-	}
-);
+const courier = new Courier({timeout:1});
+// courier.interceptRequest(
+// 	(config) => {
+// 		// console.log(res);
+// 		return config;
+// 	},
+// 	(err) => {
+// 		// console.log(err);
+// 	}
+// );
 
 // courier.interceptResponse((res) => {
 // 	// console.log(res, 'hhhh');
@@ -41,10 +41,10 @@ class App extends Component {
 			// a.put('flowers.jpg', res);
 			console.info(res, 'data');
 			console.log(courier);
-			courier.cacheType = 'aa';
+			// courier.cacheType = 'aa';
 			console.log(courier);
 		}).catch(err => {
-			console.log(err);
+			console.log(err,'n');
 		});
 		// setInterval(() => {
 		// window.fetch('https://discuz.chat/api/emoji').then((res) => {

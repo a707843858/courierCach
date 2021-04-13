@@ -35,11 +35,6 @@ export interface fetchProps {
 	isHistoryNavigation?: boolean;
 }
 
-export interface interceptRequestResponse {
-	errorResponse: any;
-	config: fetchProps;
-}
-
 class CourierCach {
 	readonly cacheType: string;
 	defaults;
@@ -84,11 +79,9 @@ class CourierCach {
 		 */
 		return new Promise(async (resolve, reject) => {
 			/** beforeFetch */
-			const interceptRequestResponse = interceptRequestAction(config);
-			if (interceptRequestResponse.errorResponse) {
-				reject(interceptRequestResponse.errorResponse);
-			}
-			config = interceptRequestResponse.config;
+			config = await interceptRequestAction(config).catch(err => {
+				reject(err);
+			}) || config;
 			/** Task | Cache */
 			cacheKey = createCacheKey({ url, config, expires, controller });
 			sendReqest = await isSendRequest(this.cacheType, cacheKey, url, config, expires);
@@ -98,7 +91,7 @@ class CourierCach {
 					if (defaults.timeout) {
 						let timer = setTimeout(() => {
 							controller.abort();
-							rej('The request has timed out !');
+							rej('The request has timed out !'); 
 							clearTimeout(timer);
 						}, defaults.timeout);
 					}
@@ -125,13 +118,9 @@ class CourierCach {
 					resolve(res);
 				})
 				.catch((err) => {
-					let error = { status: 400 };
-					if (err.status) {
-						error.status = err.status;
-					}
 					/** afterFetch Resolve */
-					error = interceptResponseAction(error, 'reject');
-					reject(error);
+					err = interceptResponseAction(err, 'reject');
+					reject(err);
 				})
 				.finally(() => {
 					tasks.deleteTask(cacheKey, false);
@@ -241,23 +230,26 @@ const createCacheKey = function (x: { url: string; config: any; expires: number;
 	return cacheKey;
 };
 
-const interceptRequestAction = function (config: fetchProps) {
-	let errorResponse: any = '';
+const interceptRequestAction = async function (config: fetchProps): Promise<fetchProps> {
 	const _config: fetchProps = requestInterceptorChain[0] ? requestInterceptorChain[0](config) : config;
 	let errMsg = '';
 	if (!_config) {
 		errMsg = 'Missing return value !';
-		errorResponse = requestInterceptorChain[1] ? requestInterceptorChain[1](errMsg) || 'No custom error message was returned !' : errMsg;
+		errMsg = requestInterceptorChain[1] ? requestInterceptorChain[1](errMsg) || errMsg : errMsg;
 	}
-	return { errorResponse, config: _config };
+	if (_config && !errMsg) {
+		return _config;
+	} else {
+		throw errMsg;
+	}
 };
 
 const interceptResponseAction = function (res: any, type: string) {
 	let _res: any = '';
 	if (type === 'resolve') {
-		_res = responseInterceptorChain[0] ? responseInterceptorChain[0](res) : res;
+		_res = responseInterceptorChain[0] ? responseInterceptorChain[0](res) || res : res;
 	} else {
-		_res = responseInterceptorChain[1] ? responseInterceptorChain[1](res) : res;
+		_res = responseInterceptorChain[1] ? responseInterceptorChain[1](res) || res : res;
 	}
 	return _res;
 };

@@ -23,10 +23,6 @@ interface fetchProps {
 	keepalive?: boolean;
 	isHistoryNavigation?: boolean;
 }
-interface interceptRequestResponse {
-	errorResponse: any;
-	config: fetchProps;
-}
 declare class CourierCach {
 	readonly cacheType: string;
 	defaults: any;
