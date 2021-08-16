@@ -60,9 +60,11 @@ const Cache = (function () {
 			} else {
 				value = caches.get(key) || '';
 			}
+			console.log(value,'f');
 			return value;
 		},
 		set: async function (key, response) {
+			console.log(response,'a');
 			let isOk = false;
 			if (type === 'cacheStorage') {
 				const cachesControl = await window.caches.open(cachesName);

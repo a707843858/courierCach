@@ -6,38 +6,57 @@ module.exports = {
 		extensions: ['.js', '.ts', '.json'],
 	},
 	// devtool: 'source-map', // 打包出的js文件是否生成map文件（方便浏览器调试）
-	mode: 'production',
+	// mode: 'production',
 	entry: {
-		'index': './src/packages/index.ts',
+		index: './src/index.ts',
 	},
 	output: {
-		filename: '[name].js', // 生成的fiename需要与package.json中的main一致
-		path: path.resolve(__dirname, 'lib'),
-		libraryTarget: 'commonjs',
+		filename: 'bundle.js',
+		path: path.resolve(__dirname, 'dist'),
+	},
+	resolve: {
+		extensions: ['.ts', '.js', '.tsx'],
+	},
+	devServer: {
+		//本地调试服务配置
+		port: 80, //端口
+		host: '0.0.0.0', //局域网访问可填写'0.0.0.0'
+		hot: true, //启动热更新
+		filename: 'bundle.js', //入口文件引入
+		contentBase: path.join(__dirname, 'src'), //映射资源目录位置
+		proxy: {
+			'/api': {
+				target: 'http://127.0.0.1:3000',
+				secure: false,
+			},
+		},
+		overlay: true,
 	},
 	module: {
 		rules: [
-			{
-				test: /\.tsx?$/,
-				use: [
-					{
-						loader: 'tslint-loader',
-						options: {
-							configFile: path.resolve(__dirname, './tslint.json'),
-						},
-					},
-				],
-				exclude: /node_modules/,
-			},
+			// {
+			// 	test: /\.js$/,
+			// 	exclude: /(node_modules|bower_components)/,
+			// 	use: {
+			// 		loader: 'babel-loader',
+			// 		options: {
+			// 			presets: [
+			// 				[
+			// 					'@babel/preset-env',
+			// 					{
+			// 						useBuiltIns: 'entry',
+			// 					},
+			// 				],
+			// 			],
+			// 			plugins: ['@babel/plugin-transform-runtime'],
+			// 		},
+			// 	},
+			// },
 			{
 				test: /\.tsx?$/,
 				use: [
 					{
 						loader: 'ts-loader',
-						options: {
-							// 指定特定的ts编译配置，为了区分脚本的ts配置
-							configFile: path.resolve(__dirname, './tsconfig.json'),
-						},
 					},
 				],
 				exclude: /node_modules/,

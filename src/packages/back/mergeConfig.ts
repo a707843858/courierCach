@@ -1,4 +1,4 @@
-import { isObject, isUndefined } from './utils';
+import { isObject, isUndefined } from '../utils';
 
 export interface DefautsConfigType {
 	baseUrl: string;
@@ -16,7 +16,9 @@ export interface DefautsConfigType {
 	integrity: string;
 	cache: string;
 	keepalive: boolean;
-	isHistoryNavigation:boolean;
+	isHistoryNavigation: boolean;
+	requestInterceptor: any[] | null;
+	responseInterceptor: any[] | null;
 }
 
 export default function mergeConfig(configProps: { [k: string]: any }): DefautsConfigType {
@@ -36,7 +38,9 @@ export default function mergeConfig(configProps: { [k: string]: any }): DefautsC
 		integrity: '',
 		cache: 'default',
 		keepalive: false,
-		isHistoryNavigation:false,
+		isHistoryNavigation: false,
+		requestInterceptor: [null,null],
+		responseInterceptor:[null,null],
 	};
 
 	/** baseConfig */
