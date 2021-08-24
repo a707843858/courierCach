@@ -1,3 +1,4 @@
+//@ts-nocheck
 const tasks: any[] = [];
 
 const tasksProxy = new Proxy(tasks, {

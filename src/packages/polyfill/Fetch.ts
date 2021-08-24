@@ -1,16 +1,12 @@
-import {  CRequest } from './Request';
-import { CResponse } from './Response';
-import { CHeaders } from './Headers';
-
 const CFetch = function (input: RequestInfo, init?: RequestInit):Promise<Response> {
 	return new Promise((resolve, reject) => {
-		const request = input instanceof CRequest ? input : new CRequest(input, init);
+		const request = input instanceof Request ? input : new Request(input, init);
 
-		let xhr = new XMLHttpRequest();
+		const xhr = new XMLHttpRequest();
 
 		xhr.onload = function () {
 			//Headers
-			const headers = new CHeaders(),
+			const headers = new Headers(),
 				rowHeaders = xhr.getAllResponseHeaders();
 			const rowHeadersArr = rowHeaders.trim().split(/[\r\n]+/);
 			rowHeadersArr.forEach(function (line) {
@@ -29,7 +25,7 @@ const CFetch = function (input: RequestInfo, init?: RequestInit):Promise<Respons
 
 			const body = xhr.response || xhr.responseText ;
 
-			resolve(new CResponse(body, options));
+			resolve(new Response(body, options));
 		};
 
 		xhr.onerror = function () {
@@ -52,7 +48,7 @@ const CFetch = function (input: RequestInfo, init?: RequestInit):Promise<Respons
 		//responseType
 
 		//headers
-		request.headers.forEach((value, name) => {
+		request.headers.forEach((value:any, name:string) => {
 			xhr.setRequestHeader(name, value);
 		});
 

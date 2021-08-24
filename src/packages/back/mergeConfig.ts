@@ -1,3 +1,5 @@
+//@ts-nocheck
+
 import { isObject, isUndefined } from '../utils';
 
 export interface DefautsConfigType {
@@ -39,8 +41,8 @@ export default function mergeConfig(configProps: { [k: string]: any }): DefautsC
 		cache: 'default',
 		keepalive: false,
 		isHistoryNavigation: false,
-		requestInterceptor: [null,null],
-		responseInterceptor:[null,null],
+		requestInterceptor: [null, null],
+		responseInterceptor: [null, null],
 	};
 
 	/** baseConfig */
@@ -93,7 +95,6 @@ export default function mergeConfig(configProps: { [k: string]: any }): DefautsC
 			config[key] = configProps[key];
 		}
 	});
-
 
 	return config;
 }

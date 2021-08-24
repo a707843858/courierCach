@@ -1,11 +1,10 @@
-import { CHeaders } from './Headers';
 import { CBody } from './Body';
 
 class CRequest extends CBody implements Request {
 	readonly cache: RequestCache = 'default';
 	readonly credentials: RequestCredentials = 'same-origin';
 	readonly destination: RequestDestination = '';
-	readonly headers: Headers | CHeaders = new CHeaders();
+	readonly headers: Headers = new Headers();
 	readonly integrity: string = '';
 	readonly isHistoryNavigation: boolean = false;
 	readonly isReloadNavigation: boolean = false;
@@ -19,7 +18,7 @@ class CRequest extends CBody implements Request {
 	readonly url: string = '';
 
 	constructor(input: RequestInfo, init?: RequestInit) {
-		super(init?.body || (typeof input !== 'string' && input?.body) || null);
+		super((typeof input !== 'string' && input?.body) || null);
 		const controller = new AbortController();
 		this.signal = controller.signal;
 		if (input instanceof Request) {
@@ -37,9 +36,9 @@ class CRequest extends CBody implements Request {
 		}
 	}
 
-	clone():CRequest {
+	clone(): Request {
 		return new CRequest(this);
 	}
 }
 
-export { CRequest};
+export { CRequest };

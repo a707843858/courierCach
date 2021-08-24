@@ -1,3 +1,4 @@
+//@ts-nocheck
 export interface responseType extends Response {
 	expires: number;
 	expirationTime: number | Date;

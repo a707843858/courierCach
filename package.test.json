@@ -4,8 +4,7 @@
   "author": "市民李生生",
   "private": false,
   "description": "一个高效便捷的前端Fetch缓存插件",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
+  "main": "./src/packages/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/a707843858/courierCach"

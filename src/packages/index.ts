@@ -1,31 +1,13 @@
-// import 'whatwg-fetch';
-// import tasks from './task';
-// import cacheControl from './mapCache';
-import { tuple, formatQuery } from './utils';
+import { tuple, formatQuery, supported } from './utils';
 import { Config } from './config';
 import { Task } from './tasks';
 import { createCache, CacheType, CCache } from './cach';
-import { CHeaders, CResponse, CRequest } from './polyfill';
-import { supported } from './utils';
+import { CHeaders, CResponse, CRequest, CFetch } from './polyfill';
 
-// const Headers = 'Headers' in window ? window.Headers : CHeaders,
-// 	Request = 'Request' in window ? window.Request : CRequest,
-// 	Response = 'Response' in window ? window.Response : CResponse,
-// 	fetch = 'fetch' in window ? window.fetch : CFetch;
-// window.Headers = CHeaders;
-
-// if (!('Headers' in  globalThis)) {
-// 	window.Headers = CHeaders;
-// }
-
-if (!supported.headers) {
-	globalThis.Headers = CHeaders;
-}
-if (!supported.request) {
-	globalThis.Request = CRequest;
-}
-if (!supported.response) {
-	globalThis.Response = CResponse;
+if (!supported.fetch) {
+  globalThis.Headers = CHeaders;
+  globalThis.Request = CRequest;
+  globalThis.Response = CResponse;
 }
 
 const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
@@ -34,156 +16,205 @@ const methodsTypes = tuple(methods.join(','));
 export type methodsType = typeof methodsTypes[number];
 
 export interface fetchConfig extends RequestInit {
-	expires?: number;
-	responseType?: string;
-	params?: any;
-	signal?: AbortSignal;
+  expires?: number;
+  responseType?: string;
+  params?: any;
+  signal?: AbortSignal;
 }
 
-// interface ResponseData extends Response {
-// 	data?: any;
-// }
+class courierCach<T extends keyof Config> {
+  readonly cacheType: CacheType;
 
-class CourierCach<T extends keyof Config> {
-	readonly cacheType: CacheType;
-	defaults: Config;
-	task: Task;
-	cache: CCache;
+  defaults: Config;
 
-	constructor(config?: { [T: string]: Config[T] }) {
-		this.defaults = new Config(config || {});
-		this.task = new Task();
-		this.cache = createCache(this.defaults.cacheType);
-		this.cacheType = this.cache.type;
-	}
+  task: Task;
 
-	async useFetch(url: string, config: fetchConfig) {
-		/** Base Data */
-		const defaults = this.defaults,
-			cache = this.cache;
-		const expires = config.expires || defaults.expires || 0,
-			requestInterceptorResolve = (defaults.requestInterceptor && defaults.requestInterceptor[0]) || null,
-			requestInterceptorReject = (defaults.requestInterceptor && defaults.requestInterceptor[1]) || null,
-			responseInterceptorResolve = (defaults.responseInterceptor && defaults.responseInterceptor[0]) || null,
-			responseInterceptorReject = (defaults.responseInterceptor && defaults.responseInterceptor[1]) || null;
+  cache: CCache;
 
-		/** Before fetch */
-		Object.keys(defaults).forEach((name) => {
-			const unlessKeys: string[] = ['headers', 'requestInterceptor', 'responseInterceptor'];
-			if (!unlessKeys.includes(name)) {
-				config[name] = config[name] === undefined ? defaults[name] : config[name];
-			}
-		});
-		!config.method && (config.method = 'GET');
-		config = requestInterceptorResolve ? requestInterceptorResolve(config) || null : config;
-		if (!config) {
-			return Promise.reject((requestInterceptorReject && requestInterceptorReject('RequestInterceptor should return config !')) || '');
-		}
+  constructor(config?: { [T: string]: Config[T] }) {
+    this.defaults = new Config(config || {});
+    this.task = new Task();
+    this.cache = createCache(this.defaults.cacheType);
+    this.cacheType = this.cache.type;
+    methods.forEach(item => {
+      if (item !== 'GET') {
+        courierCach.prototype[item.toLowerCase()] = function (url: string, config: fetchConfig = {}) {
+          config.method = item;
+          return fetch(url, config);
+        };
+      }
+    });
+  }
 
-		if (requestInterceptorReject) {
-			let errMsg: string | undefined;
-			if (!config) {
-				errMsg = await requestInterceptorReject('RequestInterceptor should return config !');
-			}
-			if (errMsg) {
-				return Promise.reject(errMsg);
-			}
-		}
+  async fetch(url: string, config: fetchConfig = {}) {
+    /** Base Data */
+    const { defaults } = this;
+    const { cache } = this;
+    const expires = config.expires || defaults.expires || 0;
+    const requestInterceptorResolve =
+      (defaults.requestInterceptor && defaults.requestInterceptor[0]) || null;
+    const requestInterceptorReject =
+      (defaults.requestInterceptor && defaults.requestInterceptor[1]) || null;
+    const responseInterceptorResolve =
+      (defaults.responseInterceptor && defaults.responseInterceptor[0]) || null;
+    const responseInterceptorReject =
+      (defaults.responseInterceptor && defaults.responseInterceptor[1]) || null;
 
-		//Headers
-		config.headers = mergerHeaders(config.headers, [defaults.headers['common'] || {}, defaults.headers[config.method || 'get'] || {}]);
+    /** Before fetch */
+    Object.keys(defaults).forEach((name: string) => {
+      const unlessKeys: string[] = [
+        'headers',
+        'requestInterceptor',
+        'responseInterceptor',
+      ];
+      if (!unlessKeys.includes(name)) {
+        config[name] =
+          config[name] === undefined ? defaults[name] : config[name];
+      }
+    });
+    config.method = config.method?.toUpperCase() || 'GET';
+    config = requestInterceptorResolve
+      ? requestInterceptorResolve(config) || null
+      : config;
+    if (!config) {
+      return Promise.reject(
+        (requestInterceptorReject &&
+          requestInterceptorReject(
+            'RequestInterceptor should return config !'
+          )) ||
+          ''
+      );
+    }
 
-		//Signal
-		if (!config.signal) {
-			const { signal } = new AbortController();
-			config.signal = signal;
-		}
+    if (requestInterceptorReject) {
+      let errMsg: string | undefined;
+      if (!config) {
+        errMsg = await requestInterceptorReject(
+          'RequestInterceptor should return config !'
+        );
+      }
+      if (errMsg) {
+        return Promise.reject(errMsg);
+      }
+    }
 
-		//Body
-		if (['GET', 'get'].includes(config.method || 'get')) {
-			url = formatQuery(defaults.baseUrl + url, config.params);
-		} else {
-			config.body = config.params;
-		}
+    // Headers
+    config.headers = mergerHeaders(config.headers, [
+      defaults.headers.common || {},
+      defaults.headers[config.method || 'GET'] || {},
+    ]);
 
-		//Request
-		const request = new Request(url, config);
-		
-		//Cache Item
-		const timestamp = new Date().getTime(),
-			cacheItem = await cache.get(request);
-		const expirationTime = cacheItem?.headers?.get('_expirationTime') || 0;
-		const sendReqest = timestamp >= expirationTime;
-		const fecthPromise: Promise<Response> = sendReqest || !cacheItem ? fetch(request) : Promise.resolve(cacheItem),
-			//@ts-ignore
-			abortPromise: Promise<void> = new Promise((res, rej): any => {
-				if (defaults.timeout) {
-					let timer = setTimeout(() => {
-						rej('The request has timed out !');
-						clearTimeout(timer);
-					}, defaults.timeout);
-				}
-			});
+    // Signal
+    if (!config.signal) {
+      const { signal } = new AbortController();
+      config.signal = signal;
+    }
 
-		this.task.set(request, config.signal);
-		console.log(sendReqest, 'jjj');
+    // Body
+    if (['GET', 'get'].includes(config.method || 'GET')) {
+      url = formatQuery(defaults.baseUrl + url, config.params);
+    } else {
+      config.body = config.params;
+    }
 
-		//Fetch
-		let response = await Promise.race([fecthPromise, abortPromise])
-			.catch((err) => {
-				responseInterceptorReject && (err = responseInterceptorReject(err) || null);
-				return new Error(err);
-			})
-			.finally(() => {
-				this.task.delete(request);
-			});
+    // Request
+    const request = new Request(url, config);
 
-		if (!response || response instanceof Error) {
-			const errMsg = response instanceof Error ? response.message : 'The Response body should be of type Response';
-			return Promise.reject(errMsg);
-		}
+    // Cache Item
+    const timestamp = new Date().getTime();
+    const cacheItem = await cache.get(request);
+    const expirationTime = cacheItem?.headers?.get('_expirationTime') || 0;
+    const sendReqest = timestamp >= expirationTime;
+    const fecthPromise: Promise<Response> =
+      sendReqest || !cacheItem ? (!supported.fetch ? fetch(request) : CFetch(request))  : Promise.resolve(cacheItem);
+    const abortPromise: Promise<Error> = new Promise((resolve) => {
+      if (defaults.timeout) {
+        const timer = setTimeout(() => {
+          resolve(new Error('The request has timed out !'));
+          clearTimeout(timer);
+        }, defaults.timeout);
+      }
+    });
 
-		/** updateCache */
-		if (response && expires > 0 && sendReqest) {
-			const newResponse = new Response(response.body, {
-				headers: { ...config.headers, _url: url || '', _expires: `${expires}`, _expirationTime: `${new Date().getTime() + Math.abs(expires)}` },
-				status: response.status,
-				statusText: response.statusText,
-			});
-			const saveResult = await cache.set(request, newResponse);
-			if (!saveResult) {
-				Promise.reject('Failed to save cache');
-			}
-			response = (await cache.get(request)) as Response;
-		}
+    this.task.set(request, config.signal);
 
-		/** Structural response body  */
-		// let response = structuralResponse(res);
-		responseInterceptorResolve && (response = responseInterceptorResolve(response) || response);
+    // Fetch
+    let response = await Promise.race([fecthPromise, abortPromise])
+      .catch((err) => {
+        return new Error(err);
+      })
+      .finally(() => {
+        this.task.delete(request);
+      });
 
-		return response as Response;
-	}
+    if (!response || response instanceof Error) {
+      let errMsg: any =
+        response instanceof Error
+          ? response.message
+          : 'The Response body should be of type Response';
+      responseInterceptorReject &&
+        (errMsg = responseInterceptorReject(errMsg) || null);
+      return Promise.reject(errMsg);
+    }
 
-	useRequestIntercept(resolve?: ((res: { [k: string]: any }) => { [k: string]: any }) | null, reject?: ((err: string) => string) | null) {
-		this.defaults.requestInterceptor = [resolve || null, reject || null];
-	}
+    /** updateCache */
+    if (response && expires > 0 && sendReqest) {
+      const newResponse = new Response(response.body || undefined, {
+        headers: {
+          ...config.headers,
+          _url: url || '',
+          _expires: `${expires}`,
+          _expirationTime: `${new Date().getTime() + Math.abs(expires)}`,
+        },
+        status: response.status,
+        statusText: response.statusText,
+      });
+      const saveResult = await cache.set(request, newResponse);
+      if (!saveResult) {
+        Promise.reject('Failed to save cache');
+      }
+      response = (await cache.get(request)) as Response;
+    }
 
-	useResponseIntercept(resolve?: ((res: Response) => Response) | null, reject?: ((err: string) => string) | null) {
-		this.defaults.responseInterceptor = [resolve || null, reject || null];
-	}
+    /** Structural response body  */
+    // let response = structuralResponse(res);
+    responseInterceptorResolve &&
+      (response = responseInterceptorResolve(response) || response);
+
+    return response as Response;
+  }
+
+  useRequestIntercept(
+    resolve?: ((res: { [k: string]: any }) => { [k: string]: any }) | null,
+    reject?: ((err: string) => string) | null
+  ) {
+    this.defaults.requestInterceptor = [resolve || null, reject || null];
+  }
+
+  useResponseIntercept(
+    resolve?: ((res: Response) => Response) | null,
+    reject?: ((err: string) => string) | null
+  ) {
+    this.defaults.responseInterceptor = [resolve || null, reject || null];
+  }
 }
 
-const mergerHeaders = function (input: HeadersInit | undefined, props: { [k: string]: any }[] = []) {
-	const headers = input instanceof Headers ? input : new Headers(input);
-	console.log(props, 'p');
-	props.forEach((col) => {
-		Object.getOwnPropertyNames(col).forEach((name) => {
-			console.log(name, col[name]);
-			headers.set(name, col[name] || undefined);
-		});
-	});
-	return headers;
+const mergerHeaders = function (
+  input: HeadersInit | undefined,
+  props: { [k: string]: any }[] = []
+) {
+  const headers = input instanceof Headers ? input : new Headers(input);
+  console.log(props, 'p');
+  props.forEach((col) => {
+    Object.getOwnPropertyNames(col).forEach((name) => {
+      headers.set(name, col[name] || undefined);
+    });
+  });
+  return headers;
 };
 
-export { Config, CourierCach };
-export default CourierCach;
+
+
+export { courierCach, Config };
+  
+export default courierCach; 

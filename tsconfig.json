@@ -2,13 +2,9 @@
   "compilerOptions": {
     "target": "es5",
     "module": "esnext",
-    "sourceMap": false,
+    "sourceMap": true,
     "importHelpers": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext", "es6"],
     "suppressImplicitAnyIndexErrors": true,
     "allowJs": true,
     "skipLibCheck": true,
@@ -17,21 +13,19 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "removeComments": true, 
+    "removeComments": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "noEmit": false,
-    "noUnusedLocals": true,             
-    "noUnusedParameters": true, 
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": [
     "src/packages/**/*.ts",
-    "src/packages/**/*.tsx"
+    "src/packages/**/*.tsx",
+    "src/packages/global.d.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "*.test.ts"
-  ]
+  "exclude": ["node_modules", "*.test.ts"]
 }

@@ -7,7 +7,7 @@
 import { supported } from '../utils';
 
 export interface BodyInternal {
-	init: BodyInit;
+	init?: BodyInit | null;
 	text?: string;
 	blob?: Blob;
 	formData?: FormData;
@@ -103,7 +103,7 @@ const convertJson = async function (body: BodyInternal): Promise<any> {
 	return response;
 };
 
-const convertText = async function (body: BodyInternal):Promise<string> {
+const convertText = async function (body: BodyInternal): Promise<string> {
 	let response: any;
 	if (body.blob) {
 		response = await fileReaderAsText(body.blob).catch((err) => err);
@@ -117,8 +117,6 @@ const convertText = async function (body: BodyInternal):Promise<string> {
 	}
 	return response instanceof Error ? Promise.reject(response.message) : response;
 };
-
-
 
 const filePromise = function (fileReader: FileReader) {
 	return new Promise((resolve, reject) => {
@@ -161,14 +159,13 @@ const bufferClone = function (buff: any) {
 	}
 };
 
-
 class CBody implements Body {
 	readonly body: ReadableStream<Uint8Array> | null = null;
 	static _bodyUsed: boolean = false;
 	static _body: BodyInternal = { init: '' };
 	readonly _isPolyfill: boolean = true;
 
-	constructor(body: BodyInit | null = null) {
+	constructor(body: BodyInit | null | undefined = null) {
 		CBody._body = generatBody(body || null);
 		// if ('ReadableStream' in globalThis && 'Uint8Array' in globalThis && body) {
 		// 	this.body = new ReadableStream(new Uint8Array(body));

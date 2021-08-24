@@ -1,11 +1,10 @@
 import { CacheType, CCache } from './cach';
+import {convertToPostRequest} from '../utils'
 // import cryptoJs from 'crypto-js';
 
 export class CCacheStorage implements CCache {
 	readonly type: CacheType = 'cacheStorage';
 	readonly cachesName = 'apiCache';
-
-	constructor() {}
 
 	async clear() {
 		await caches.delete(this.cachesName);
@@ -13,10 +12,11 @@ export class CCacheStorage implements CCache {
 		return true;
 	}
 
-	async get(key: Request) {
+	async get(key: Request,body?:BodyInit) {
 		return caches.open(this.cachesName).then((res) => {
+			const request = key.method === 'GET' ? key : convertToPostRequest(key,{body});
 			return res
-				.match(key)
+				.match(request)
 				.then((response) => {
 					return response;
 				})
@@ -24,12 +24,12 @@ export class CCacheStorage implements CCache {
 		});
 	}
 
-	async set(key: Request, value: Response) {
+	async set(key: Request, value: Response,body?:BodyInit) {
 		return caches
 			.open(this.cachesName)
 			.then((res) => {
-				// let request = new Request(key.p);
-				res.put(key, value);
+				const request = key.method === 'GET' ? key : convertToPostRequest(key, { body });
+				res.put(request, value);
 				return true;
 			})
 			.catch(() => false);

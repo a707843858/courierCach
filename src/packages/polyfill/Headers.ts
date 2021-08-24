@@ -1,15 +1,16 @@
-export type CHeadersInit = CHeaders | HeadersInit ;
+export type CHeadersInit = HeadersInit ;
 
 class CHeaders implements Headers {
 	[Symbol.iterator]: any;
 	private map: Map<string, any> = new Map();
 	readonly _isPolyfill: boolean = true;
+	
 
 	constructor(props?:HeadersInit) {
 		if (props instanceof CHeaders) {
-			props.forEach((value: string, name: string) => {
-				this.append(name, value);
-			}, this);
+			Object.getOwnPropertyNames(props).map((name) => {
+				this.append(name, props[name]);
+			})
 		} else if (props instanceof Headers) {
 			props.forEach((name) => {
 				this.append(name, props.get(name) || '');
@@ -61,9 +62,9 @@ class CHeaders implements Headers {
 		return this.map.entries();
 	}
 
-	forEach(callbackfn: (key: string, name: string, parent: CHeaders) => void, thisArg?: any): void {
+	forEach(callback: (value: string, index: string, headers: Headers) => void, thisArg?: any): void {
 		this.map.forEach((item: any, index: string) => {
-			callbackfn.call(thisArg, item, index, this);
+			callback.call(thisArg,item, index, this);
 		});
 	}
 }

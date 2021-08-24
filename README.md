@@ -20,14 +20,17 @@ import courierCach from ' courier-cach';
 
 const  courier = new  courierCach({
 
+  // 选择缓存方式,map为内存缓存,cacheStorage为浏览器caches缓存，如若不支持则自动切换回map方式
+  cacheType:'map',
+
   //baseUrl 将添加到 Url前面作为基本路径,类型:string,默认值:'';
   baseUrl:'http://xxx.com',
 
-  //请求超时时间(单位为 ms),类型:number，默认值:0;
-  timeout:
+  //请求超时时间(单位为 ms),类型:number，默认值:1000 * 60;
+  timeout:1000 * 60,
 
   // 缓存有效时间(单位为 ms)，不设置时间则不缓存,类型:number,默认值:0
-  expires:6000 * 1 ,
+  expires:0 ,
 
   //期待返回类型,可选值:textarrayBuffer、blob、formData,类型:string,默认值:'json';
   responseType:'json',
@@ -41,9 +44,6 @@ const  courier = new  courierCach({
     COMMON:{
       //.....
     },
-    POST:{
-      //....
-    }
     //....
   }
 
@@ -83,6 +83,7 @@ const  courier = new  courierCach({
   headers:{
     '_expirese':6000,//请求缓存时间
     '_expirationTime':1618215453000,//缓存过期时间
+    '_url':'http://xxxxx',//请求地址
     //......
   },
 

@@ -1,4 +1,3 @@
-import { CHeaders } from './Headers';
 import { CBody } from './Body';
 
 // export interface CResponseInit {
@@ -8,7 +7,7 @@ import { CBody } from './Body';
 // }
 
 class CResponse extends CBody implements Response {
-	readonly headers: CHeaders = new CHeaders();
+	readonly headers: Headers = new Headers();
 	readonly ok: boolean = true;
 	readonly redirected: boolean = false;
 	readonly status: number = 200;
@@ -16,14 +15,9 @@ class CResponse extends CBody implements Response {
 	readonly type: ResponseType = 'cors';
 	readonly url: string = '';
 	readonly trailer: Promise<Headers>;
-	//body --
-	// readonly body: ReadableStream<Uint8Array> | null = null;
-	// static _bodyUsed: boolean = false;
-	// static _body: BodyInternal = { init: '' };
-	// readonly _isPolyfill: boolean = true;
 
 	constructor(body?: BodyInit | null, init?: ResponseInit) {
-		super(body || null);
+		super(body);
 		//body
 		// CResponse._body = generatBody(body || null);
 		// if (supported.readableStream && supported.uint8Array && body) {
@@ -93,7 +87,7 @@ class CResponse extends CBody implements Response {
 	// }
 
 	clone(): CResponse {
-		return new CResponse(this.body, { headers: this.headers, status: this.status, statusText: this.statusText });
+		return new CResponse(CResponse._body.init, { headers: this.headers, status: this.status, statusText: this.statusText });
 	}
 
 	static error(): CResponse {
@@ -101,9 +95,8 @@ class CResponse extends CBody implements Response {
 	}
 
 	static redirect(url: string, status?: number) {
-		return new Response(null, { status: status, headers: { location: url } });
+		return new Response(undefined, { status: status, headers: { location: url } });
 	}
-
 }
 
 export { CResponse };

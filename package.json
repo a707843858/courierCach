@@ -1,20 +1,17 @@
 {
   "name": "courier-cache",
-  "version": "0.1.9",
-  "author": "市民李生生",
+  "version": "0.2.0",
+  "author": "小铭同学",
   "private": false,
   "description": "一个高效便捷的前端Fetch缓存插件",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
+  "main": "./src/packages/index.js",
   "license": "TIM",
   "repository": {
     "type": "git",
     "url": "https://github.com/a707843858/courierCach"
   },
   "files": [
-    "lib",
-    "src",
-    "config"
+    "src"
   ],
   "keywords": [
     "cach",
@@ -25,8 +22,7 @@
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "core-js": "^3.10.0",
-    "crypto-js": "^4.1.1",
-    "typescript": "4.3.5"
+    "crypto-js": "^4.1.1"
   },
   "scripts": {
     "start": "webpack-dev-server --mode development",
@@ -47,17 +43,22 @@
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.14.5",
     "@babel/preset-env": "^7.14.8",
-    "@types/whatwg-fetch": "^0.0.33",
+    "@typescript-eslint/eslint-plugin": "^4.29.2",
+    "@typescript-eslint/parser": "^4.29.2",
     "@webpack-cli/serve": "^1.5.1",
     "babel-loader": "^8.2.2",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "clean-webpack-plugin": "^3.0.0",
     "core-js": "^3.10.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-html": "^6.1.2",
     "koa": "^2.13.1",
     "koa-body": "^4.2.0",
     "koa-router": "^10.0.0",
     "koa2-cors": "^2.0.6",
-    "ts-loader": "^8.3.0",
-    "tslib": "^2.3.0",
+    "ts-loader": "^9.2.5",
+    "tslib": "^2.3.1",
+    "typescript": "^4.3.5",
     "webpack": "5.36.2",
     "webpack-cli": "3.3.12",
     "webpack-dev-server": "3.11.2"
